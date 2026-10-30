@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Payment Gateway Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Superadmin · Payment Gateway</div>
+      <nav class="dashboard-nav" id="saNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="saLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Payment Gateway</div><div class="page-subtitle">Razorpay adapter configuration (demo)</div></div></header>
+      <div id="pgView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_settings as settings, __sraswati_razorpay as rz, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('saNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('saLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'superadmin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('payment-gateway-settings.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const s = settings.all ? settings.all() : window.__sraswati_storage.readCollection('settings', {});
+      const el = document.getElementById('pgView');
+      el.innerHTML = `
+        <div class="card" style="max-width:700px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">Razorpay adapter</div>
+          <p style="color:var(--text-muted);margin-bottom:var(--space-12);font-size:13px">Demo adapter only — no real secret key is stored. Payments are recorded as pending and require admin approval.</p>
+          <form id="pgForm" novalidate>
+            <div class="field"><label class="lbl">Environment</label><select id="pgEnv" class="input"><option value="test" ${s.razorpayEnvironment==='live'?'':'selected'}>Test</option><option value="live" ${s.razorpayEnvironment==='live'?'selected':''}>Live</option></select></div>
+            <div class="field"><label class="lbl">Key ID (demo)</label><input type="text" id="pgKey" class="input" value="${s.razorpayKeyId||'rzp_test_demo_placeholder'}"><div style="color:var(--text-muted);font-size:12px">Secret key must be configured server-side, never in frontend.</div></div>
+            <div class="field"><label class="lbl">Checkout enabled</label><select id="pgEn" class="input"><option value="false" ${s.razorpayCheckoutEnabled!==true?'selected':''}>No (manual payments)</option><option value="true" ${s.razorpayCheckoutEnabled===true?'selected':''}>Yes</option></select></div>
+            <div class="field"><label class="lbl">Auto-approve Razorpay payments</label><select id="pgAuto" class="input"><option value="false" ${s.autoApproveRazorpay!==true?'selected':''}>No</option><option value="true" ${s.autoApproveRazorpay===true?'selected':''}>Yes</option></select></div>
+            <div class="field"><label class="lbl">Methods</label><input type="text" id="pgMethods" class="input" value="${(s.razorpayMethods||['upi','card','netbanking','wallet','emi']).join(', ')}"><div style="color:var(--text-muted);font-size:12px">Comma-separated: upi, card, netbanking, wallet, emi</div></div>
+            <div class="field-error" id="pgErr" style="margin-bottom:var(--space-10)"></div>
+            <div class="form-actions"><button type="button" class="btn sec" onclick="window.location.href='dashboard.html'">Cancel</button><button type="submit" class="btn pri full">Save gateway settings</button></div>
+          </form>
+        </div>
+        <div class="card" style="max-width:700px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Adapter status</div>
+          <div style="display:flex;gap:var(--space-12);font-size:12px;color:var(--text-muted)"><span class="tag ${s.razorpaySecretConfigured?'ok':'bad'}">${s.razorpaySecretConfigured?'Secret configured':'Secret not configured'}</span><span class="tag neu">Demo mode</span></div>
+        </div>`;
+      document.getElementById('pgForm').onsubmit = (e)=>{
+        e.preventDefault(); document.getElementById('pgErr').textContent='';
+        const data = { razorpayEnvironment:document.getElementById('pgEnv').value, razorpayKeyId:document.getElementById('pgKey').value, razorpayCheckoutEnabled:document.getElementById('pgEn').value==='true', autoApproveRazorpay:document.getElementById('pgAuto').value==='true', razorpayMethods:document.getElementById('pgMethods').value.split(',').map(x=>x.trim()).filter(Boolean), razorpaySecretConfigured: false, updatedAt:new Date().toISOString() };
+        const cur = settings.all ? settings.all() : window.__sraswati_storage.readCollection('settings', {});
+        const merged = { ...cur, ...data };
+        const res = settings.save ? settings.save(merged) : (window.__sraswati_storage.writeCollection('settings', merged), { ok:true });
+        if(res.ok){ notify.success('Gateway settings saved.'); render(); }
+        else { document.getElementById('pgErr').textContent = res.error||'Failed.'; }
+      };
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

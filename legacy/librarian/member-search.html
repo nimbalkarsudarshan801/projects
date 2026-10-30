@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Member Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Librarian · Member Search</div>
+      <nav class="dashboard-nav" id="libNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="libLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Member Search</div><div class="page-subtitle">Look up members, loans, and fines</div></div></header>
+      <div class="card" style="max-width:560px;margin-bottom:var(--space-16)">
+        <div class="field"><label class="lbl">Search by name or email</label><input type="text" id="msSearch" class="input" placeholder="Search..."></div>
+      </div>
+      <div id="msView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_members as mem, __sraswati_loans as ln, __sraswati_fines as fn, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('libNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('libLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'librarian';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('member-search.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const term = document.getElementById('msSearch').value.toLowerCase();
+      const users = mem.allUsers().filter(u=>u.role==='student').filter(u=>!term||u.name.toLowerCase().includes(term)||u.email.toLowerCase().includes(term));
+      const el = document.getElementById('msView');
+      el.innerHTML = users.map(user => {
+        const myLoans = ln.allLoansForUser(user.id).filter(l=>l.status==='active').length;
+        const out = fn.outstandingForUser(user.id);
+        return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-12);margin-bottom:var(--space-10);display:flex;justify-content:space-between;align-items:center">
+          <div><div class="dashboard-user-name" style="font-size:14px">${user.name}</div><div style="color:var(--text-muted);font-size:12px">${user.email}</div></div>
+          <div style="text-align:right"><div class="stat" style="font-size:15px">${myLoans}</div><div style="color:var(--text-muted);font-size:11px">Active loans</div><div class="stat bad" style="font-size:15px;margin-top:var(--space-4)">${f.currency(out)}</div><div style="color:var(--text-muted);font-size:11px">Outstanding</div></div>
+        </div>`;
+      }).join('')||'<div class="empty-state"><p>No members found.</p></div>';
+    }
+    document.getElementById('msSearch').addEventListener('input', render);
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['librarian','admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

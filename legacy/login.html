@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Log in to your SraswatiLibrary account.">
+  <title>SraswatiLibrary — Log in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/public.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+
+  <nav class="public-nav">
+    <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="register.html">Register</a>
+    </div>
+  </nav>
+
+  <div style="display:flex;flex:1;align-items:center;justify-content:center;padding:var(--space-16)">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-brand">Sraswati<span style="color:#FFC247">Library</span></div>
+        <p style="color:var(--text-muted);font-size:14px">Welcome back. Sign in to your library account.</p>
+      </div>
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label class="lbl">Email address</label>
+          <input type="email" id="email" name="email" class="input" placeholder="riya@student.example" required autocomplete="email">
+          <div class="field-error" id="emailError"></div>
+        </div>
+        <div class="field input-group">
+          <label class="lbl">Password</label>
+          <input type="password" id="password" name="password" class="input" required autocomplete="current-password">
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">👁</button>
+          <div class="field-error" id="passwordError"></div>
+        </div>
+        <div class="field checkbox-group" style="margin-bottom:var(--space-12)">
+          <input type="checkbox" id="remember" name="remember">
+          <label for="remember" style="cursor:pointer">Remember me (demo session)</label>
+        </div>
+        <div class="field-error" id="formError" style="margin-bottom:var(--space-12)"></div>
+        <div class="form-actions">
+          <button type="button" class="btn sec" onclick="window.location.href='index.html'">Cancel</button>
+          <button type="submit" class="btn pri full" id="loginBtn">Sign in</button>
+        </div>
+      </form>
+      <div class="auth-divider">Or</div>
+      <div class="form-actions" style="justify-content:center">
+        <a class="btn sec full" href="forgot-password.html">Forgot password?</a>
+      </div>
+      <div style="margin-top:var(--space-12);text-align:center;font-size:13px;color:var(--text-label)">
+        Don't have an account? <a href="register.html" style="color:var(--brand-accent);text-decoration:underline">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { __sraswati_auth as auth, __sraswati_validators as v, __sraswati_notifications as notify } from './js/app.js';
+
+    const form = document.getElementById('loginForm');
+    const emailEl = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const emailErr = document.getElementById('emailError');
+    const passErr = document.getElementById('passwordError');
+    const formErr = document.getElementById('formError');
+    const btn = document.getElementById('loginBtn');
+
+    document.getElementById('togglePassword').addEventListener('click', () => {
+      const show = passwordEl.type === 'password';
+      passwordEl.type = show ? 'text' : 'password';
+      passwordEl.focus();
+    });
+
+    function showFieldError(el, input, msg) {
+      el.textContent = msg;
+      if (input) input.classList.add('error');
+    }
+    function clearFieldError(el, input) {
+      el.textContent = '';
+      if (input) input.classList.remove('error');
+    }
+
+    emailEl.addEventListener('input', () => clearFieldError(emailErr, emailEl));
+    passwordEl.addEventListener('input', () => clearFieldError(passErr, passwordEl));
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearFieldError(emailErr, emailEl);
+      clearFieldError(passErr, passwordEl);
+      formErr.textContent = '';
+
+      const rules = {
+        email: [v.required, v.email],
+        password: [v.required],
+      };
+      const result = v.validate(rules, { email: emailEl.value, password: passwordEl.value });
+      if (!result.valid) {
+        if (result.errors.email) showFieldError(emailErr, emailEl, result.errors.email);
+        if (result.errors.password) showFieldError(passErr, passwordEl, result.errors.password);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      const res = auth.login(emailEl.value.trim(), passwordEl.value);
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+
+      if (res.ok) {
+        notify.success(`Welcome back, ${res.user.name}.`);
+        setTimeout(() => { window.location.href = auth.getCurrentUser().role === 'student' ? 'student/dashboard.html' : (res.user.role === 'librarian' ? 'librarian/dashboard.html' : res.user.role === 'admin' ? 'admin/dashboard.html' : 'superadmin/dashboard.html'); }, 700);
+      } else {
+        notify.error(res.error || 'Login failed.');
+        formErr.textContent = res.error || 'Invalid email or password.';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SraswatiLibrary Terms of Service.">
+  <title>SraswatiLibrary — Terms of Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/public.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+
+  <nav class="public-nav">
+    <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="privacy.html">Privacy</a>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width:760px;margin:var(--space-24) auto;padding:0 var(--space-16)">
+    <h1 style="font-family:var(--font-serif);font-size:32px;margin-bottom:var(--space-12)">Terms of Service</h1>
+    <p style="color:var(--text-label);font-size:12px;text-transform:uppercase;letter-spacing:0.14em;margin-bottom:var(--space-16)">Version 1.0 &nbsp;·&nbsp; Last updated <span id="termsDate">—</span></p>
+
+    <div class="card" style="line-height:1.7;color:var(--text-secondary)">
+      <p><strong>1. Acceptance</strong></p>
+      <p>By accessing or using SraswatiLibrary you agree to these terms. If you do not agree, do not use the service.</p>
+      <p><strong>2. Demo service</strong></p>
+      <p>This is a frontend demonstration. All data is stored in browser storage (localStorage/sessionStorage) and is not a production service. No real payments are processed. Razorpay integration is simulated through a frontend adapter.</p>
+      <p><strong>3. Accounts</strong></p>
+      <p>You are responsible for your account credentials. Demo passwords are stored for demonstration only and must not be reused for real systems.</p>
+      <p><strong>4. Payments</strong></p>
+      <p>Payment attempts are recorded as pending until administratively approved. A successful frontend checkout is not proof of payment. Access is activated only after verification and approval.</p>
+      <p><strong>5. Conduct</strong></p>
+      <p>Do not attempt to bypass access controls, modify another user's records, or exploit demo mechanisms.</p>
+      <p><strong>6. Changes</strong></p>
+      <p>These terms may be updated. Continued use after changes constitutes acceptance of the revised terms.</p>
+      <p><strong>7. Contact</strong></p>
+      <p>Questions: help@sraswatilibrary.example</p>
+    </div>
+
+    <div style="margin-top:var(--space-20);padding:var(--space-16);border:1px solid var(--border);background:var(--card);border-radius:var(--radius-md)">
+      <p style="font-size:13px;color:var(--text-label)"><strong>Note for the operator:</strong> This is placeholder demo text, not final legal advice. Replace with owner-approved terms before any public deployment.</p>
+    </div>
+  </div>
+
+  <footer class="public-footer">
+    <div class="footer-bottom">
+      <span>SraswatiLibrary · Frontend demo</span>
+      <span><a href="privacy.html">Privacy policy</a> · <a href="index.html">Home</a></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    document.getElementById('termsDate').textContent = new Date().toLocaleDateString('en-IN');
+  </script>
+</body>
+</html>

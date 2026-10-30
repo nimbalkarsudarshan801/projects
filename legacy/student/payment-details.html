@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Payment details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Student Portal · Payment details</div>
+      <nav class="dashboard-nav" id="studentNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="studentLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Payment receipt</div><div class="page-subtitle">Transaction details</div></div><a class="btn sec" href="payments.html">Back to payments</a></header>
+      <div id="paymentView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_payments as p, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('studentNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('studentLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'student';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}">${i.icon||'•'} ${i.label}</a>`).join('');
+    const params = new URLSearchParams(location.search);
+    const payId = params.get('id');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const pay = p.findPayment(payId);
+      const el = document.getElementById('paymentView');
+      if(!pay){ el.innerHTML = '<div class="empty-state"><h3>Payment not found</h3></div>'; return; }
+      const canView = pay.userId === u.id;
+      if(!canView){ el.innerHTML = '<div class="empty-state"><h3>Not your payment</h3><p>You can only view your own payment records.</p></div>'; return; }
+      el.innerHTML = `
+        <div class="card">
+          <div class="dashboard-user-name" style="font-size:20px;margin-bottom:var(--space-12)">Receipt</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-12)">
+            <div><div class="label">Reference</div><div style="font-weight:600">${pay.reference}</div></div>
+            <div><div class="label">Amount</div><div class="stat" style="font-size:20px">${f.currency(pay.amount)}</div></div>
+            <div><div class="label">Method</div><div>${pay.method}</div></div>
+            <div><div class="label">Type</div><div>${pay.type}</div></div>
+            <div><div class="label">Status</div><div><span class="tag ${f.statusClass(pay.status)}">${f.statusLabel(pay.status)}</span></div></div>
+            <div><div class="label">Date</div><div>${f.dateTime(pay.recordedAt)}</div></div>
+          </div>
+          ${pay.razorpayPaymentId ? `<div style="margin-top:var(--space-12);padding:var(--space-12);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md)"><div class="label">Gateway reference</div><div style="font-family:var(--font-sans);font-size:13px">${pay.razorpayPaymentId}</div></div>` : ''}
+          ${pay.notes ? `<div style="margin-top:var(--space-12)"><div class="label">Notes</div><div style="color:var(--text-muted)">${pay.notes}</div></div>` : ''}
+        </div>
+      `;
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['student'])) return;
+    render();
+  </script>
+</body>
+</html>

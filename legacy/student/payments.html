@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Payments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Student Portal · Payments</div>
+      <nav class="dashboard-nav" id="studentNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="studentLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Payments</div><div class="page-subtitle">Payment history and pending approvals</div></div><a class="btn pri" href="membership.html">Get membership</a></header>
+      <div id="paymentsView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_payments as p, __sraswati_razorpay as rz, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('studentNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('studentLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'student';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('payments.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const list = p.paymentsForUser(u.id).sort((a,b)=> new Date(b.recordedAt)-new Date(a.recordedAt));
+      const pending = p.pendingApprovals().filter(a => a.userId === u.id);
+      const el = document.getElementById('paymentsView');
+      let html = '';
+      if(pending.length){
+        html += `<div class="card" style="margin-bottom:var(--space-16)"><div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Pending approvals</div>${pending.map(a => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:var(--space-10);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:var(--space-8)">
+            <div><div class="dashboard-user-name" style="font-size:14px">${a.type} · ${f.currency(a.amount)}</div><div style="color:var(--text-muted);font-size:12px">${a.method}</div></div>
+            <span class="tag warn">Awaiting approval</span>
+          </div>`).join('')}</div>`;
+      }
+      html += `<div class="table-wrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Detail</th></tr></thead><tbody>${list.map(pay => `
+        <tr><td>${pay.reference}</td><td>${pay.type}</td><td>${f.currency(pay.amount)}</td><td>${pay.method}</td><td><span class="tag ${f.statusClass(pay.status)}">${f.statusLabel(pay.status)}</span></td><td>${f.dateShort(pay.recordedAt)}</td><td><a class="btn pri sm" href="payment-details.html?id=${pay.id}">View</a></td></tr>`).join('')}</tbody></table></div>`;
+      el.innerHTML = html;
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['student'])) return;
+    render();
+  </script>
+</body>
+</html>

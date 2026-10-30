@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Create a SraswatiLibrary student account.">
+  <title>SraswatiLibrary — Register</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/public.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+
+  <nav class="public-nav">
+    <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="login.html">Log in</a>
+    </div>
+  </nav>
+
+  <div style="display:flex;flex:1;align-items:center;justify-content:center;padding:var(--space-16)">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-brand">Sraswati<span style="color:#FFC247">Library</span></div>
+        <p style="color:var(--text-muted);font-size:14px">Create your student account. Demo accounts are pre-seeded; you may also register a new one.</p>
+      </div>
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label class="lbl">Full name</label>
+          <input type="text" id="name" name="name" class="input" placeholder="Riya Patel" required>
+          <div class="field-error" id="nameError"></div>
+        </div>
+        <div class="field">
+          <label class="lbl">Email address</label>
+          <input type="email" id="email" name="email" class="input" placeholder="riya@student.example" required autocomplete="email">
+          <div class="field-error" id="emailError"></div>
+        </div>
+        <div class="field">
+          <label class="lbl">Phone</label>
+          <input type="tel" id="phone" name="phone" class="input" placeholder="+91 98765 43210">
+          <div class="field-error" id="phoneError"></div>
+        </div>
+        <div class="field input-group">
+          <label class="lbl">Password</label>
+          <input type="password" id="password" name="password" class="input" placeholder="••••••••" required>
+          <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">👁</button>
+          <div class="password-strength" id="strengthBar"><div class="password-strength-bar" id="strengthFill"></div></div>
+          <div class="password-strength-text" id="strengthText"></div>
+          <div class="field-error" id="passwordError"></div>
+        </div>
+        <div class="field input-group">
+          <label class="lbl">Confirm password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" class="input" placeholder="••••••••" required>
+          <div class="field-error" id="confirmError"></div>
+        </div>
+        <div class="field checkbox-group">
+          <input type="checkbox" id="terms" name="terms" required>
+          <label for="terms" style="cursor:pointer">I accept the <a href="terms.html" target="_blank" style="color:var(--brand-accent);text-decoration:underline">Terms of Service</a> and <a href="privacy.html" target="_blank" style="color:var(--brand-accent);text-decoration:underline">Privacy Policy</a></label>
+          <div class="field-error" id="termsError"></div>
+        </div>
+        <div class="field-error" id="formError" style="margin-bottom:var(--space-12)"></div>
+        <div class="form-actions">
+          <button type="button" class="btn sec" onclick="window.location.href='login.html'">Cancel</button>
+          <button type="submit" class="btn pri full" id="registerBtn">Create account</button>
+        </div>
+      </form>
+      <div style="margin-top:var(--space-12);text-align:center;font-size:13px;color:var(--text-label)">
+        Already have an account? <a href="login.html" style="color:var(--brand-accent);text-decoration:underline">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { __sraswati_auth as auth, __sraswati_validators as v, __sraswati_notifications as notify } from './js/app.js';
+
+    const form = document.getElementById('registerForm');
+    const els = {
+      name: document.getElementById('name'), email: document.getElementById('email'), phone: document.getElementById('phone'),
+      password: document.getElementById('password'), confirm: document.getElementById('confirmPassword'), terms: document.getElementById('terms'),
+    };
+    const errs = {
+      name: document.getElementById('nameError'), email: document.getElementById('emailError'), phone: document.getElementById('phoneError'),
+      password: document.getElementById('passwordError'), confirm: document.getElementById('confirmError'), terms: document.getElementById('termsError'),
+    };
+    const formErr = document.getElementById('formError');
+    const btn = document.getElementById('registerBtn');
+    const strengthBar = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+
+    document.getElementById('togglePassword').addEventListener('click', () => {
+      const show = els.password.type === 'password';
+      els.password.type = show ? 'text' : 'text'; // keep simple
+      els.password.type = show ? 'text' : 'password';
+      els.password.focus();
+    });
+
+    function clear(id) { errs[id].textContent = ''; els[id].classList.remove('error'); }
+    function show(id, msg) { errs[id].textContent = msg; els[id].classList.add('error'); }
+
+    Object.keys(els).forEach(k => { if (els[k]) els[k].addEventListener('input', () => clear(k)); });
+
+    els.password.addEventListener('input', () => {
+      const s = v.passwordStrength(els.password.value);
+      strengthBar.style.width = `${Math.min(s.score, 4) * 25}%`;
+      strengthBar.className = 'password-strength-bar ' + (s.level <= 1 ? 'bad' : s.level <= 2 ? 'warn' : s.level <= 3 ? 'ok' : 'ok');
+      strengthText.textContent = s.feedback;
+      strengthText.className = 'password-strength-text ' + (s.level <= 1 ? 'bad' : s.level <= 2 ? 'warn' : 'ok');
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      Object.keys(errs).forEach(k => errs[k].textContent = '');
+      formErr.textContent = '';
+
+      const rules = {
+        name: [v.required, v.minLength.bind(null, _, 2)],
+        email: [v.required, v.email],
+        phone: [v.required, v.phone],
+        password: [v.required, v.minLength.bind(null, _, 8)],
+        confirm: [v.required, v.confirmPassword.bind(null, _, els.password.value)],
+        terms: [v.required],
+      };
+      const result = v.validate(rules, {
+        name: els.name.value, email: els.email.value, phone: els.phone.value,
+        password: els.password.value, confirm: els.confirm.value,
+        terms: els.terms.checked ? 'yes' : '',
+      });
+      if (!result.valid) {
+        Object.entries(result.errors).forEach(([k, msg]) => show(k, msg));
+        return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Creating…';
+      const res = auth.register({
+        name: els.name.value.trim(), email: els.email.value.trim(), phone: els.phone.value.trim(),
+        password: els.password.value, termsAccepted: els.terms.checked,
+      });
+      btn.disabled = false; btn.textContent = 'Create account';
+
+      if (res.ok) {
+        notify.success('Account created. Please log in.');
+        setTimeout(() => { window.location.href = 'login.html'; }, 800);
+      } else {
+        notify.error(res.error || 'Registration failed.');
+        formErr.textContent = res.error || 'Could not create account.';
+      }
+    });
+  </script>
+</body>
+</html>

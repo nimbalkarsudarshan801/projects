@@ -1,0 +1,229 @@
+/* Dashboard layout (student, admin, librarian, superadmin) */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-demo-banner {
+  background: var(--demo-bg);
+  color: var(--demo-fg);
+  font-size: 12px;
+  padding: var(--space-6) var(--space-16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-demo-banner a {
+  color: var(--brand-accent-hover);
+  text-decoration: underline;
+  margin-left: var(--space-10);
+}
+
+.dashboard-shell {
+  display: flex;
+  flex: 1;
+}
+
+.dashboard-sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.dashboard-sidebar .brand {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  padding: var(--space-12) var(--space-16);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+
+.dashboard-sidebar .sub {
+  font-size: 12px;
+  color: var(--text-label);
+  padding: var(--space-8) var(--space-16);
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-nav {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-10) var(--space-12);
+}
+
+.dashboard-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: var(--space-4);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.dashboard-nav a:hover {
+  background: var(--card-hover);
+  color: var(--text-secondary);
+}
+
+.dashboard-nav a.active {
+  background: rgba(255, 194, 71, 0.12);
+  color: var(--text);
+}
+
+.dashboard-nav a.active .icon {
+  color: var(--brand-accent);
+}
+
+.dashboard-sidebar-footer {
+  padding: var(--space-12);
+  border-top: 1px solid var(--border);
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: var(--space-16) var(--space-20);
+  overflow: auto;
+  background: var(--bg-body);
+}
+
+.dashboard-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-16);
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+.dashboard-title {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.dashboard-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-accent);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.dashboard-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dashboard-user-role {
+  font-size: 12px;
+  color: var(--text-label);
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-12);
+  margin-bottom: var(--space-16);
+}
+
+.dashboard-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16);
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-secondary);
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile sidebar overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 30;
+}
+
+.sidebar-overlay.open {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .dashboard-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translatex(-100%);
+    transition: transform var(--transition-base);
+    z-index: 40;
+    width: 280px;
+  }
+
+  .dashboard-sidebar.open {
+    transform: translatex(0);
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .dashboard-main {
+    padding: var(--space-12);
+  }
+}

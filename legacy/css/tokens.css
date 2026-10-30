@@ -1,0 +1,100 @@
+/* Design tokens — Sraswati Library :root
+   Preserves the Lumen Library visual language: dark library theme,
+   warm gold accent, DM Sans + Fraunces typography. All values are
+   referenced by component stylesheets; changing them rebrands the app. */
+:root {
+  /* Brand */
+  --brand-name: 'SraswatiLibrary';
+  --brand-accent: #FFC247;
+  --brand-accent-hover: #FFD27A;
+  --brand-accent-dark: #1A1405;
+  --brand-accent-soft: rgba(255, 194, 71, 0.12);
+
+  /* Backgrounds */
+  --bg: #0E1116;
+  --bg-body: #0E1116;
+  --card: #12171E;
+  --card-hover: #151A25;
+  --sidebar: #12171E;
+  --overlay: rgba(0, 0, 0, 0.55);
+
+  /* Borders / dividers */
+  --border: #232A33;
+  --border-hover: #3A424F;
+  --border-focus: #FFC247;
+  --divider: #2A313C;
+
+  /* Text */
+  --text: #F3EFE6;
+  --text-secondary: #E6E9EE;
+  --text-muted: #B4BBC6;
+  --text-label: #98A1AE;
+  --text-inverse: #1A1405;
+
+  /* Fonts */
+  --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+
+  /* Status colors */
+  --ok-bg: #14301F;
+  --ok-fg: #8FE0A8;
+  --warn-bg: #3A2D0F;
+  --warn-fg: #FFC247;
+  --bad-bg: #3D1C1C;
+  --bad-fg: #FF9E9E;
+  --neu-bg: #1D242E;
+  --neu-fg: #C9CFD8;
+
+  /* Spacing */
+  --space-2: 4px;
+  --space-4: 8px;
+  --space-6: 12px;
+  --space-8: 16px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-16: 32px;
+  --space-20: 40px;
+  --space-24: 48px;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s ease;
+  --transition-slow: 0.35s ease;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --max-width: 1280px;
+
+  /* Z-index */
+  --z-dropdown: 10;
+  --z-modal: 100;
+  --z-toast: 200;
+
+  /* Demo-mode banner */
+  --demo-bg: #3A2D0F;
+  --demo-fg: #FFC247;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

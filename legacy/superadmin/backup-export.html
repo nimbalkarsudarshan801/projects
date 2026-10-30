@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Backup / Export</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Superadmin · Backup / Export</div>
+      <nav class="dashboard-nav" id="saNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="saLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Backup / Export</div><div class="page-subtitle">Export demo data as JSON/CSV</div></div></header>
+      <div id="bakView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_storage as storage, __sraswati_payments as pay, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('saNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('saLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'superadmin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('backup-export.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const collections = ['users','books','copies','loans','seats','bookings','memberships','payments','fines','auditLogs','settings'];
+      const el = document.getElementById('bakView');
+      el.innerHTML = `
+        <div class="card" style="max-width:700px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">Export all data (JSON)</div>
+          <p style="color:var(--text-muted);font-size:12px;margin-bottom:var(--space-12)">Downloads a snapshot of every localStorage collection. Demo data only.</p>
+          <button class="btn pri" onclick="exportAll()">Export full snapshot</button>
+        </div>
+        <div class="card" style="max-width:700px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Export by collection (CSV)</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-10)">${collections.map(c => `<button class="btn sec full" onclick="exportCol('${c}')">${c}</button>`).join('')}</div>
+        </div>`;
+    }
+    window.exportAll = () => { const snapshot = {}; ['users','books','copies','loans','seats','bookings','memberships','payments','paymentApprovals','fines','sessions','notifications','auditLogs','settings','terms','consent'].forEach(c=>{ snapshot[c] = storage.readCollection(c, []); }); const blob = new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='sraswati-backup.json'; a.click(); URL.revokeObjectURL(url); notify.success('Snapshot downloaded.'); };
+    window.exportCol = (c) => { const rows = storage.readCollection(c, []); const csv = pay.csvExport(rows); if(!csv){ notify.error('No data.'); return; } const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`sraswati-${c}.csv`; a.click(); URL.revokeObjectURL(url); notify.success(`${c} exported.`); };
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

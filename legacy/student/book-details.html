@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Book Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Student Portal · Book details</div>
+      <nav class="dashboard-nav" id="studentNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="studentLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Book details</div><div class="page-subtitle">Availability, copies, and actions</div></div><a class="btn sec" href="books.html">Back to catalogue</a></header>
+      <div id="bookView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_books as b, __sraswati_loans as l, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('studentNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('studentLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'student';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}">${i.icon||'•'} ${i.label}</a>`).join('');
+    const params = new URLSearchParams(location.search);
+    const bookId = params.get('id');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const book = b.findBook(bookId);
+      const el = document.getElementById('bookView');
+      if(!book){ el.innerHTML = '<div class="empty-state"><h3>Book not found</h3></div>'; return; }
+      const inv = b.inventoryForBook(book.id);
+      const myActive = l.activeLoansForUser(u.id).find(loan => loan.bookId === book.id);
+      el.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-16);align-items:flex-start">
+          <div class="book-cover" style="width:96px;height:128px;font-size:20px;flex:0 0 96px;background:${book.cover}">${book.title.slice(0,2)}</div>
+          <div style="flex:1 1 320px;min-width:0">
+            <div class="dashboard-user-name" style="font-size:24px">${book.title}</div>
+            <p style="color:var(--text-muted)">${book.author}</p>
+            <p style="color:var(--text-label);font-size:13px;margin:6px 0">ISBN ${book.isbn} · ${book.category} · ${book.publisher} · ${book.edition} (${book.publishedYear})</p>
+            <p style="color:var(--text-secondary)">${book.description || 'No description available.'}</p>
+          </div>
+        </div>
+        <div class="card" style="margin-top:var(--space-16)">
+          <div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Copies &amp; availability</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--space-8)">
+            <div class="dashboard-stat"><div class="stat">${inv.total}</div><div class="stat-label">Total copies</div></div>
+            <div class="dashboard-stat"><div class="stat">${inv.available}</div><div class="stat-label">Available</div></div>
+            <div class="dashboard-stat"><div class="stat">${inv.issued}</div><div class="stat-label">Issued</div></div>
+            <div class="dashboard-stat"><div class="stat">${inv.reserved}</div><div class="stat-label">Reserved</div></div>
+            <div class="dashboard-stat"><div class="stat">${inv.damaged}</div><div class="stat-label">Damaged</div></div>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:var(--space-16);gap:var(--space-8)">
+          ${myActive ? `<button class="btn sec sm" onclick="renewBook('${book.id}')" disabled>Already on loan</button>` : inv.available > 0 ? `<button class="btn pri sm" onclick="borrowBook('${book.id}')">Borrow this book</button>` : `<button class="btn sec sm" disabled>Not available</button>`}
+        </div>
+      `;
+      window.borrowBook = (id) => {
+        const res = l.issueBook({ userId: u.id, bookId: id, issuedBy: u.id });
+        if(res.ok){ notify.success(`Book issued. Due ${f.dateShort(res.loan.dueAt)}.`); render(); } else { notify.error(res.error); }
+      };
+      window.renewBook = (id) => {
+        const loan = l.activeLoansForUser(u.id).find(x => x.bookId === id);
+        if(!loan) return;
+        const res = l.renewLoan(loan.id);
+        if(res.ok){ notify.success(`Renewed. New due date ${f.dateShort(res.loan.dueAt)}.`); render(); } else { notify.error(res.error); }
+      };
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['student'])) return;
+    render();
+  </script>
+</body>
+</html>

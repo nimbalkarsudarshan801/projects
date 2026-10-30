@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Users</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Admin · Users</div>
+      <nav class="dashboard-nav" id="adminNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="adminLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Users</div><div class="page-subtitle">Create, edit, enable or disable accounts</div></div><a class="btn pri" href="#" onclick="openUserForm()">Add user</a></header>
+      <div id="usersView"></div>
+      <div id="userFormWrap" style="display:none"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_members as mem, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms, __sraswati_validators as v } from '../js/app.js';
+    const navEl = document.getElementById('adminNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('adminLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'admin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('users.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    let editingId = null;
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const list = mem.allUsers().sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+      const el = document.getElementById('usersView');
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--space-10);margin-bottom:var(--space-12)">
+          <div><div class="dashboard-user-name" style="font-size:14px;color:var(--text-label);text-transform:uppercase;letter-spacing:0.06em">Accounts</div></div>
+          <input type="text" id="userFilter" placeholder="Search name or email" class="input" style="width:min(300px,100%)">
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Avatar</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Membership</th><th>Created</th><th>Actions</th></tr></thead><tbody>${list.map(user => {
+        const mems = window.__sraswati_storage.readCollection('memberships', []).filter(m=>m.userId===user.id && m.status==='active');
+        const roleColor = user.role==='superadmin'?'bad':user.role==='admin'?'warn':user.role==='librarian'?'neu':'ok';
+        return `<tr><td><div class="dashboard-user-avatar" style="width:28px;height:28px;font-size:11px">${user.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)}</div></td><td><div class="dashboard-user-name" style="font-size:13px">${user.name}</div></td><td style="color:var(--text-muted);font-size:13px">${user.email}</td><td><span class="tag ${roleColor}" style="font-size:11px">${user.role}</span></td><td><span class="tag ${user.status==='active'?'ok':'bad'}">${user.status}</span></td><td>${mems.length?`<span class="tag ok">Active ${mems[0].planName}</span>`:`<span class="tag neu">None</span>`}</td><td style="color:var(--text-muted);font-size:12px">${f.dateShort(user.createdAt)}</td><td>
+          <button class="btn pri sm" onclick="openUserForm('${user.id}')" style="padding:4px 8px;font-size:12px">Edit</button>
+          ${user.status!=='disabled'?`<button class="btn danger sm" onclick="setStatus('${user.id}','disabled')" style="padding:4px 8px;font-size:12px">Disable</button>`:`<button class="btn sec sm" onclick="setStatus('${user.id}','active')" style="padding:4px 8px;font-size:12px">Enable</button>`}
+        </td></tr>`;
+      }).join('')}</tbody></table></div>`;
+    }
+    function openUserForm(id){
+      editingId = id;
+      const wrap = document.getElementById('userFormWrap');
+      const user = id ? mem.findUser(id) : null;
+      wrap.style.display = 'block';
+      wrap.innerHTML = `
+        <div class="card" style="max-width:520px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">${id?'Edit user':'Create user'}</div>
+          <form id="userSaveForm" novalidate>
+            <div class="field"><label class="lbl">Full name</label><input type="text" id="ufName" class="input" value="${user?user.name:''}" required></div>
+            <div class="field"><label class="lbl">Email</label><input type="email" id="ufEmail" class="input" value="${user?user.email:''}" required></div>
+            <div class="field"><label class="lbl">Phone</label><input type="tel" id="ufPhone" class="input" value="${user?user.phone||'':''}"></div>
+            <div class="field"><label class="lbl">Role</label><select id="ufRole" class="input"><option value="student">Student</option><option value="librarian">Librarian</option><option value="admin">Admin</option></select></div>
+            <div class="field"><label class="lbl">Status</label><select id="ufStatus" class="input"><option value="active">Active</option><option value="disabled">Disabled</option></select></div>
+            ${!id?`<div class="field"><label class="lbl">Demo password</label><input type="password" id="ufPassword" class="input" placeholder="demo1234"></div>`:''}
+            <div class="field-error" id="ufErr" style="margin-bottom:var(--space-10)"></div>
+            <div class="form-actions"><button type="button" class="btn sec" onclick="closeUserForm()">Cancel</button><button type="submit" class="btn pri full">Save</button></div>
+          </form>
+        </div>`;
+      document.getElementById('ufRole').value = user?user.role:'student';
+      document.getElementById('ufStatus').value = user?user.status:'active';
+      document.getElementById('userSaveForm').onsubmit = (e)=>{
+        e.preventDefault(); document.getElementById('ufErr').textContent='';
+        const data = { name:document.getElementById('ufName').value.trim(), email:document.getElementById('ufEmail').value.trim(), phone:document.getElementById('ufPhone').value.trim(), role:document.getElementById('ufRole').value, status:document.getElementById('ufStatus').value };
+        if(!id) data.password = document.getElementById('ufPassword').value||'demo1234';
+        const res = id ? mem.updateUser(id,data) : mem.createUser(data);
+        if(res.ok){ notify.success(id?'User updated.':'User created.'); closeUserForm(); render(); }
+        else { document.getElementById('ufErr').textContent = res.error||'Failed.'; }
+      };
+    }
+    window.openUserForm = openUserForm;
+    window.closeUserForm = () => { document.getElementById('userFormWrap').style.display='none'; editingId=null; };
+    window.setStatus = (id,status) => { if(!confirm(`Set user status to ${status}?`)) return; const res = mem.setUserStatus(id,status); if(res.ok){ notify.success(`User ${status}.`); render(); } else { notify.error(res.error); } };
+    document.getElementById('userFilter').addEventListener('input',(e)=>{
+      const term = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('#usersView tbody tr');
+      rows.forEach(r=>{ r.style.display = r.textContent.toLowerCase().includes(term)?'':'none'; });
+    });
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

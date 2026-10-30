@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Admin · Settings</div>
+      <nav class="dashboard-nav" id="adminNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="adminLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Settings</div><div class="page-subtitle">Application configuration (demo)</div></div></header>
+      <div id="settingsView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_settings as settings, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('adminNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('adminLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'admin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('settings.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const s = settings.all ? settings.all() : window.__sraswati_storage.readCollection('settings', {});
+      const el = document.getElementById('settingsView');
+      el.innerHTML = `
+        <div class="card" style="max-width:640px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">Application settings</div>
+          <form id="settingsForm" novalidate>
+            <div class="field"><label class="lbl">App name</label><input type="text" id="stApp" class="input" value="${s.appName||'SraswatiLibrary'}"></div>
+            <div class="field"><label class="lbl">Currency</label><input type="text" id="stCur" class="input" value="${s.currency||'INR'}"></div>
+            <div class="field"><label class="lbl">Loan days</label><input type="number" id="stLoan" class="input" value="${s.loanDays||14}"></div>
+            <div class="field"><label class="lbl">Max loans per student</label><input type="number" id="stMax" class="input" value="${s.maxLoansPerStudent||5}"></div>
+            <div class="field"><label class="lbl">Fine per day</label><input type="number" id="stFine" class="input" value="${s.finePerDay||5}"></div>
+            <div class="field"><label class="lbl">Seat hold minutes</label><input type="number" id="stHold" class="input" value="${s.seatHoldMinutes||15}"></div>
+            <div class="field"><label class="lbl">Contact email</label><input type="email" id="stEmail" class="input" value="${s.contactEmail||''}"></div>
+            <div class="field"><label class="lbl">Razorpay key ID (demo)</label><input type="text" id="stKey" class="input" value="${s.razorpayKeyId||''}"><div style="color:var(--text-muted);font-size:12px">Demo only. Production stores secrets server-side.</div></div>
+            <div class="field"><label class="lbl">Approval required for payments</label><select id="stAppr" class="input"><option value="true" ${s.approvalRequiredForPayments!==false?'selected':''}>Yes</option><option value="false" ${s.approvalRequiredForPayments===false?'selected':''}>No</option></select></div>
+            <div class="field-error" id="stErr" style="margin-bottom:var(--space-10)"></div>
+            <div class="form-actions"><button type="button" class="btn sec" onclick="window.location.href='dashboard.html'">Cancel</button><button type="submit" class="btn pri full">Save settings</button></div>
+          </form>
+        </div>`;
+      document.getElementById('settingsForm').onsubmit = (e)=>{
+        e.preventDefault(); document.getElementById('stErr').textContent='';
+        const data = { appName:document.getElementById('stApp').value, currency:document.getElementById('stCur').value, loanDays:Number(document.getElementById('stLoan').value), maxLoansPerStudent:Number(document.getElementById('stMax').value), finePerDay:Number(document.getElementById('stFine').value), seatHoldMinutes:Number(document.getElementById('stHold').value), contactEmail:document.getElementById('stEmail').value, razorpayKeyId:document.getElementById('stKey').value, approvalRequiredForPayments:document.getElementById('stAppr').value==='true', updatedAt:new Date().toISOString() };
+        const res = settings.save ? settings.save(data) : (window.__sraswati_storage.writeCollection('settings', data), { ok:true });
+        if(res.ok){ notify.success('Settings saved.'); render(); }
+        else { document.getElementById('stErr').textContent = res.error||'Failed.'; }
+      };
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

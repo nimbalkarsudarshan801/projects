@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Librarian Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Librarian Desk</div>
+      <nav class="dashboard-nav" id="libNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="libLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Librarian Dashboard</div><div class="page-subtitle">Daily circulation desk operations</div></div></header>
+      <div id="statsView"></div>
+      <div id="quickView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_loans as ln, __sraswati_books as bk, __sraswati_bookings as bkg, __sraswati_fines as fn, __sraswati_members as mem, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('libNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('libLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'librarian';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('dashboard.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const loans = ln.allLoans(); const overdue = ln.overdueLoans ? ln.overdueLoans().length : 0;
+      const active = loans.filter(l=>l.status==='active').length;
+      const bookings = bkg.allBookings(); const pending = bookings.filter(b=>b.approvalStatus==='pending').length;
+      const fines = fn.allFines(); const outstanding = fines.filter(f=>f.status!=='paid').reduce((s,f)=>s+(f.amount||0),0);
+      document.getElementById('statsView').innerHTML = `
+        <div class="dashboard-stats">
+          <div class="dashboard-stat"><div class="stat-label">Active loans</div><div class="stat">${active}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Overdue</div><div class="stat bad">${overdue}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Pending bookings</div><div class="stat warn">${pending}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Outstanding fines</div><div class="stat bad">${f.currency(outstanding)}</div></div>
+        </div>`;
+      document.getElementById('quickView').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--space-12);margin-top:var(--space-16)">
+          <div class="card"><div class="dashboard-user-name" style="font-size:16px">Quick actions</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-8);margin-top:var(--space-10)">
+              <a class="btn pri full" href="catalogue.html">Catalogue</a>
+              <a class="btn sec full" href="issue-return.html">Issue / Return</a>
+              <a class="btn pri full" href="reservations.html">Reservations</a>
+              <a class="btn sec full" href="member-search.html">Member search</a>
+            </div></div>
+        </div>`;
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['librarian','admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SraswatiLibrary Privacy Policy.">
+  <title>SraswatiLibrary — Privacy Policy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/public.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+
+  <nav class="public-nav">
+    <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="terms.html">Terms</a>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width:760px;margin:var(--space-24) auto;padding:0 var(--space-16)">
+    <h1 style="font-family:var(--font-serif);font-size:32px;margin-bottom:var(--space-12)">Privacy Policy</h1>
+    <p style="color:var(--text-label);font-size:12px;text-transform:uppercase;letter-spacing:0.14em;margin-bottom:var(--space-16)">Version 1.0 &nbsp;·&nbsp; Last updated <span id="privacyDate">—</span></p>
+
+    <div class="card" style="line-height:1.7;color:var(--text-secondary)">
+      <p><strong>1. What we collect</strong></p>
+      <p>In this demo, only the data you enter (name, email, phone, password) is stored in your browser's localStorage/sessionStorage. No data is transmitted to a server.</p>
+      <p><strong>2. How data is used</strong></p>
+      <p>Data is used solely to operate your library session (loans, bookings, payments, membership) within this browser.</p>
+      <p><strong>3. Sharing</strong></p>
+      <p>No data is shared with third parties in demo mode.</p>
+      <p><strong>4. Your rights</strong></p>
+      <p>You may view, export, or clear your demo data from the Superadmin storage panel, or request account deletion via the help page.</p>
+      <p><strong>5. Cookies</strong></p>
+      <p>Only essential session cookies/storage are used. No analytics or marketing cookies are active without consent.</p>
+      <p><strong>6. Security</strong></p>
+      <p>Demo data is not encrypted at rest and is accessible to anyone with access to your browser. Do not enter real personal data.</p>
+      <p><strong>7. Contact</strong></p>
+      <p>Privacy requests: help@sraswatilibrary.example</p>
+    </div>
+
+    <div style="margin-top:var(--space-20);padding:var(--space-16);border:1px solid var(--border);background:var(--card);border-radius:var(--radius-md)">
+      <p style="font-size:13px;color:var(--text-label)"><strong>Note for the operator:</strong> This is placeholder demo text, not final legal advice. Replace with owner-approved policy and actual business contact details before deployment.</p>
+    </div>
+  </div>
+
+  <footer class="public-footer">
+    <div class="footer-bottom">
+      <span>SraswatiLibrary · Frontend demo</span>
+      <span><a href="terms.html">Terms of service</a> · <a href="index.html">Home</a></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    document.getElementById('privacyDate').textContent = new Date().toLocaleDateString('en-IN');
+  </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+/* Public pages (landing, auth, legal) shared styles */
+
+.public-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.public-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-10) var(--space-16);
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+
+.public-nav .brand {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.public-nav .nav-links {
+  display: flex;
+  gap: var(--space-16);
+  align-items: center;
+}
+
+.public-nav .nav-links a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.public-nav .nav-links a:hover {
+  color: var(--text);
+}
+
+.public-hero {
+  padding: var(--space-24) var(--space-16);
+  text-align: center;
+}
+
+.public-hero .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-accent);
+  margin-bottom: var(--space-12);
+}
+
+.public-hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 6vw, 56px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin-bottom: var(--space-16);
+}
+
+.public-hero p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto var(--space-20);
+}
+
+.public-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: var(--space-12);
+  padding: 0 var(--space-16);
+  margin-bottom: var(--space-24);
+}
+
+.public-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.public-tile:hover {
+  border-color: var(--brand-accent);
+}
+
+.public-tile .tile-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-label);
+}
+
+.public-tile .tile-value {
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 600;
+}
+
+.public-tile .tile-note {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.public-footer {
+  border-top: 1px solid var(--border);
+  padding: var(--space-20) var(--space-16);
+  background: var(--card);
+  margin-top: auto;
+}
+
+.public-footer .footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-20);
+  margin-bottom: var(--space-16);
+}
+
+.public-footer .footer-col h4 {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  margin-bottom: var(--space-10);
+  color: var(--text-secondary);
+}
+
+.public-footer .footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.public-footer .footer-col a {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.public-footer .footer-col a:hover {
+  color: var(--text);
+}
+
+.public-footer .footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-12);
+  font-size: 13px;
+  color: var(--text-label);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-16);
+}
+
+.demo-banner {
+  background: var(--demo-bg);
+  color: var(--demo-fg);
+  text-align: center;
+  padding: var(--space-6) var(--space-16);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.demo-banner a {
+  color: var(--brand-accent-hover);
+  text-decoration: underline;
+}

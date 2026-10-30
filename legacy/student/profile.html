@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Student Portal · Profile</div>
+      <nav class="dashboard-nav" id="studentNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="studentLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Profile</div><div class="page-subtitle">Edit your account details</div></div></header>
+      <div class="auth-card" style="max-width:480px;margin:0 auto">
+        <form id="profileForm" novalidate>
+          <div class="field"><label class="lbl">Full name</label><input type="text" id="name" class="input" required></div>
+          <div class="field"><label class="lbl">Email</label><input type="email" id="email" class="input" required></div>
+          <div class="field"><label class="lbl">Phone</label><input type="tel" id="phone" class="input"></div>
+          <div class="field-error" id="formError" style="margin-bottom:var(--space-12)"></div>
+          <div class="form-actions"><button type="button" class="btn sec" onclick="window.location.href='dashboard.html'">Cancel</button><button type="submit" class="btn pri full">Save changes</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_members as mem, __sraswati_validators as v, __sraswati_notifications as notify, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('studentNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('studentLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'student';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('profile.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    const form = document.getElementById('profileForm');
+    const nameEl = document.getElementById('name'); const emailEl = document.getElementById('email'); const phoneEl = document.getElementById('phone');
+    const formErr = document.getElementById('formError');
+    function load(){ const u = auth.getCurrentUser(); if(!u)return; userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2); nameEl.value = u.name || ''; emailEl.value = u.email || ''; phoneEl.value = u.phone || ''; }
+    form.addEventListener('submit',(e)=>{ e.preventDefault(); formErr.textContent = ''; const r = v.validate({ name: [v.required], email: [v.required, v.email], phone: [v.phone] }, { name: nameEl.value, email: emailEl.value, phone: phoneEl.value }); if(!r.valid){ Object.entries(r.errors).forEach(([k,m])=>{ const el = document.getElementById(k); if(el) el.classList.add('error'); }); formErr.textContent = Object.values(r.errors).join(' '); return; } const res = mem.updateUser(auth.getCurrentUser().id, { name: nameEl.value.trim(), email: emailEl.value.trim(), phone: phoneEl.value.trim() }); if(res.ok){ notify.success('Profile updated.'); load(); } else { notify.error(res.error || 'Update failed.'); formErr.textContent = res.error || 'Update failed.'; } });
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['student'])) return;
+    load();
+  </script>
+</body>
+</html>

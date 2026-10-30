@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Membership</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Student Portal · Membership</div>
+      <nav class="dashboard-nav" id="studentNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="studentLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Membership</div><div class="page-subtitle">Your membership status and renewal</div></div><div class="dashboard-user" id="dashboardUser"><div class="dashboard-user-avatar" id="userAvatar">U</div><div class="dashboard-user-info"><div class="dashboard-user-name" id="userName">—</div><div class="dashboard-user-role">Student</div></div></div></header>
+      <section class="card">
+        <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">Your membership</div>
+        <div id="membershipView"></div>
+      </section>
+      <section class="card">
+        <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">Membership plans</div>
+        <div id="plansView"></div>
+      </section>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_memberships as m, __sraswati_payments as p, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('studentNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('studentLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'student';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('membership.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const mem = m.activeMembershipForUser(u.id);
+      const view = document.getElementById('membershipView');
+      if(mem){
+        view.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-12);margin-bottom:var(--space-16)">
+            <div class="dashboard-stat"><div class="stat">${mem.planName}</div><div class="stat-label">Plan</div></div>
+            <div class="dashboard-stat"><div class="stat">${mem.status}</div><div class="stat-label">Status</div></div>
+            <div class="dashboard-stat"><div class="stat">${f.dateShort(mem.expiresAt)}</div><div class="stat-label">Expires</div></div>
+            <div class="dashboard-stat"><div class="stat">${mem.borrowLimit}</div><div class="stat-label">Borrow limit</div></div>
+          </div>
+          ${mem.status !== 'active' ? `<div class="empty-state"><p>Your membership is ${mem.status}. Renew to keep borrowing books and booking seats.</p></div>` : `<p style="color:var(--text-muted)">Your membership is active. You can borrow up to ${mem.borrowLimit} books and book seats.</p>`}
+        `;
+      } else {
+        view.innerHTML = `<div class="empty-state"><h3>No active membership</h3><p>Choose a plan below to become a member.</p></div>`;
+      }
+      const plansEl = document.getElementById('plansView');
+      const plans = m.allMembershipPlans().filter(pl => pl.active);
+      plansEl.innerHTML = plans.map(pl => `
+        <div class="card">
+          <div class="dashboard-user-name" style="font-size:16px">${pl.name}</div>
+          <p style="color:var(--text-muted);font-size:14px">${pl.description || ''}</p>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:var(--space-10)">
+            <div><div class="stat" style="font-size:24px">${f.currency(pl.price)}</div><div class="stat-label">${pl.durationDays} days · ${pl.borrowLimit} books</div></div>
+            <button class="btn pri sm" onclick="purchasePlan('${pl.id}')">${mem && mem.status === 'active' ? 'Renew' : 'Get membership'}</button>
+          </div>
+        </div>
+      `).join('');
+      window.purchasePlan = (planId) => {
+        const plan = m.allMembershipPlans().find(x => x.id === planId);
+        if(!plan) return;
+        if(!confirm(`Purchase ${plan.name} membership for ${f.currency(plan.price)}?`)) return;
+        const res = p.createPayment({ userId: u.id, amount: plan.price, method: 'razorpay', reference: 'MEM-DEMO', type: 'membership', relatedId: '', notes: `Membership: ${plan.name}` });
+        const memRes = m.purchaseMembership({ userId: u.id, planId, amount: plan.price, method: 'razorpay', reference: 'MEM-DEMO' });
+        notify.success(`Membership purchase recorded as Pending (requires admin approval). Amount: ${f.currency(plan.price)}`);
+        render();
+      };
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['student'])) return;
+    render();
+  </script>
+</body>
+</html>

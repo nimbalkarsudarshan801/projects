@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — System Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Superadmin · System Settings</div>
+      <nav class="dashboard-nav" id="saNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="saLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">System Settings</div><div class="page-subtitle">Global application configuration</div></div></header>
+      <div id="sysView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_settings as settings, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('saNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('saLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'superadmin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('system-settings.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const s = settings.all ? settings.all() : window.__sraswati_storage.readCollection('settings', {});
+      const el = document.getElementById('sysView');
+      el.innerHTML = `
+        <div class="card" style="max-width:700px;margin-top:var(--space-12)">
+          <div class="dashboard-user-name" style="font-size:18px;margin-bottom:var(--space-12)">System settings</div>
+          <form id="sysForm" novalidate>
+            <div class="field"><label class="lbl">App name</label><input type="text" id="ssApp" class="input" value="${s.appName||'SraswatiLibrary'}"></div>
+            <div class="field"><label class="lbl">Currency</label><input type="text" id="ssCur" class="input" value="${s.currency||'INR'}"></div>
+            <div class="field"><label class="lbl">Loan days</label><input type="number" id="ssLoan" class="input" value="${s.loanDays||14}"></div>
+            <div class="field"><label class="lbl">Max loans per student</label><input type="number" id="ssMax" class="input" value="${s.maxLoansPerStudent||5}"></div>
+            <div class="field"><label class="lbl">Fine per day</label><input type="number" id="ssFine" class="input" value="${s.finePerDay||5}"></div>
+            <div class="field"><label class="lbl">Seat hold minutes</label><input type="number" id="ssHold" class="input" value="${s.seatHoldMinutes||15}"></div>
+            <div class="field"><label class="lbl">Seat booking advance days</label><input type="number" id="ssAdv" class="input" value="${s.seatBookingAdvanceDays||7}"></div>
+            <div class="field"><label class="lbl">Opening hours</label><input type="text" id="ssHours" class="input" value="${s.openingHours||'9:00 – 21:00'}"></div>
+            <div class="field"><label class="lbl">Contact email</label><input type="email" id="ssEmail" class="input" value="${s.contactEmail||''}"></div>
+            <div class="field"><label class="lbl">Contact phone</label><input type="tel" id="ssPhone" class="input" value="${s.contactPhone||''}"></div>
+            <div class="field"><label class="lbl">Address</label><input type="text" id="ssAddr" class="input" value="${s.address||''}"></div>
+            <div class="field"><label class="lbl">Razorpay environment</label><select id="ssEnv" class="input"><option value="test" ${s.razorpayEnvironment==='live'?'':'selected'}>Test</option><option value="live" ${s.razorpayEnvironment==='live'?'selected':''}>Live</option></select></div>
+            <div class="field"><label class="lbl">Razorpay key ID (demo)</label><input type="text" id="ssKey" class="input" value="${s.razorpayKeyId||''}"><div style="color:var(--text-muted);font-size:12px">Demo placeholder. Never store real secrets in frontend.</div></div>
+            <div class="field"><label class="lbl">Approval required for payments</label><select id="ssAppr" class="input"><option value="true" ${s.approvalRequiredForPayments!==false?'selected':''}>Yes</option><option value="false" ${s.approvalRequiredForPayments===false?'selected':''}>No</option></select></div>
+            <div class="field-error" id="ssErr" style="margin-bottom:var(--space-10)"></div>
+            <div class="form-actions"><button type="button" class="btn sec" onclick="window.location.href='dashboard.html'">Cancel</button><button type="submit" class="btn pri full">Save settings</button></div>
+          </form>
+        </div>`;
+      document.getElementById('sysForm').onsubmit = (e)=>{
+        e.preventDefault(); document.getElementById('ssErr').textContent='';
+        const data = { appName:document.getElementById('ssApp').value, currency:document.getElementById('ssCur').value, loanDays:Number(document.getElementById('ssLoan').value), maxLoansPerStudent:Number(document.getElementById('ssMax').value), finePerDay:Number(document.getElementById('ssFine').value), seatHoldMinutes:Number(document.getElementById('ssHold').value), seatBookingAdvanceDays:Number(document.getElementById('ssAdv').value), openingHours:document.getElementById('ssHours').value, contactEmail:document.getElementById('ssEmail').value, contactPhone:document.getElementById('ssPhone').value, address:document.getElementById('ssAddr').value, razorpayEnvironment:document.getElementById('ssEnv').value, razorpayKeyId:document.getElementById('ssKey').value, approvalRequiredForPayments:document.getElementById('ssAppr').value==='true', updatedAt:new Date().toISOString() };
+        const res = settings.save ? settings.save(data) : (window.__sraswati_storage.writeCollection('settings', data), { ok:true });
+        if(res.ok){ notify.success('Settings saved.'); render(); }
+        else { document.getElementById('ssErr').textContent = res.error||'Failed.'; }
+      };
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Issue / Return</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/student.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Librarian · Issue / Return</div>
+      <nav class="dashboard-nav" id="libNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="libLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Issue / Return</div><div class="page-subtitle">Issue books to members and record returns</div></div></header>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:var(--space-16)">
+        <section class="card">
+          <div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Issue a book</div>
+          <form id="issueForm" novalidate>
+            <div class="field"><label class="lbl">Member email</label><input type="email" id="ieEmail" class="input" required></div>
+            <div class="field"><label class="lbl">Book title / ISBN</label><input type="text" id="ieBook" class="input" required></div>
+            <div class="field"><label class="lbl">Due days</label><input type="number" id="ieDays" class="input" value="14"></div>
+            <div class="field-error" id="ieErr" style="margin-bottom:var(--space-10)"></div>
+            <button type="submit" class="btn pri full">Issue book</button>
+          </form>
+        </section>
+        <section class="card">
+          <div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Return a book</div>
+          <form id="returnForm" novalidate>
+            <div class="field"><label class="lbl">Loan ID</label><input type="text" id="reLoan" class="input" placeholder="e.g. ln_1" required></div>
+            <div class="field-error" id="reErr" style="margin-bottom:var(--space-10)"></div>
+            <button type="submit" class="btn pri full">Record return</button>
+          </form>
+        </section>
+      </div>
+      <div id="activeLoansView" style="margin-top:var(--space-16)"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_loans as ln, __sraswati_books as bk, __sraswati_members as mem, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('libNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('libLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'librarian';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('issue-return.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const loans = ln.allLoans().filter(l=>l.status==='active');
+      const el = document.getElementById('activeLoansView');
+      el.innerHTML = `<div class="dashboard-user-name" style="font-size:16px;margin-bottom:var(--space-10)">Active loans (${loans.length})</div><div class="table-wrap"><table><thead><tr><th>Loan ID</th><th>Member</th><th>Book</th><th>Due</th><th>Action</th></tr></thead><tbody>${loans.map(l => {
+        const user = mem.findUser(l.userId); const book = bk.findBook(l.bookId);
+        return `<tr><td style="font-size:12px">${l.id}</td><td style="font-size:12px">${user?user.name:'—'}</td><td style="font-size:12px">${book?book.title:'—'}</td><td style="font-size:12px">${f.dateShort(l.dueAt)}</td><td><button class="btn pri sm" onclick="ret('${l.id}')" style="padding:4px 8px">Return</button></td></tr>`;
+      }).join('')}</tbody></table></div>`;
+      window.ret = (id) => { const r = ln.returnBook(id, auth.getCurrentUser().id); if(r.ok){ notify.success(`Returned.${r.overdue?' Fine ₹'+r.fine:''}`); render(); } else { notify.error(r.error); } };
+    }
+    document.getElementById('issueForm').onsubmit = (e)=>{
+      e.preventDefault(); document.getElementById('ieErr').textContent='';
+      const email = document.getElementById('ieEmail').value.trim(); const bookText = document.getElementById('ieBook').value.trim(); const days = Number(document.getElementById('ieDays').value)||14;
+      const user = mem.allUsers().find(u=>u.email===email); if(!user){ document.getElementById('ieErr').textContent='Member not found.'; return; }
+      const book = bk.allBooks().find(b=>b.title===bookText||b.isbn===bookText); if(!book){ document.getElementById('ieErr').textContent='Book not found.'; return; }
+      const r = ln.issueBook({ userId:user.id, bookId:book.id, dueDays:days, issuedBy:auth.getCurrentUser().id });
+      if(r.ok){ notify.success(`Issued "${book.title}" to ${user.name}. Due ${f.dateShort(r.loan.dueAt)}.`); e.target.reset(); render(); }
+      else { document.getElementById('ieErr').textContent = r.error; }
+    };
+    document.getElementById('returnForm').onsubmit = (e)=>{
+      e.preventDefault(); document.getElementById('reErr').textContent='';
+      const r = ln.returnBook(document.getElementById('reLoan').value.trim(), auth.getCurrentUser().id);
+      if(r.ok){ notify.success(`Returned.${r.overdue?' Fine ₹'+r.fine:''}`); e.target.reset(); render(); }
+      else { document.getElementById('reErr').textContent = r.error; }
+    };
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['librarian','admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

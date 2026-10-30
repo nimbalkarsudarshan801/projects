@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SraswatiLibrary — Library management system. Browse the catalogue, book seats, manage memberships and loans.">
+  <meta name="theme-color" content="#0E1116">
+  <title>SraswatiLibrary — Welcome</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/public.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+
+  <nav class="public-nav">
+    <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+    <div class="nav-links">
+      <a href="#catalogue">Catalogue</a>
+      <a href="#seats">Seat Booking</a>
+      <a href="#membership">Membership</a>
+      <a href="login.html">Log in</a>
+      <a class="btn pri" href="register.html">Register</a>
+    </div>
+  </nav>
+
+  <header class="public-hero">
+    <div class="badge">Frontend demo · SraswatiLibrary</div>
+    <h1>Your library,<br>at your fingertips</h1>
+    <p>Browse the catalogue, borrow books, reserve seats, manage your membership, and track payments — from one place.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn pri lg" href="login.html">Log in to your portal</a>
+      <a class="btn sec lg" href="#catalogue">Explore the catalogue</a>
+    </div>
+  </header>
+
+  <section class="public-grid" id="catalogue">
+    <a class="public-tile" href="login.html">
+      <span class="tile-label">Student portal</span>
+      <span class="tile-value">Log in</span>
+      <span class="tile-note">Loans, bookings, payments, profile</span>
+    </a>
+    <a class="public-tile" href="#seats">
+      <span class="tile-label">Book a seat</span>
+      <span class="tile-value">Reserve</span>
+      <span class="tile-note">Tables, carrels, reading hall</span>
+    </a>
+    <a class="public-tile" href="#membership">
+      <span class="tile-label">Membership</span>
+      <span class="tile-value">Plans</span>
+      <span class="tile-note">Standard, Premium, Annual</span>
+    </a>
+    <a class="public-tile" href="#catalogue">
+      <span class="tile-label">Catalogue</span>
+      <span class="tile-value">Browse</span>
+      <span class="tile-note">Books, authors, availability</span>
+    </a>
+  </section>
+
+  <section class="card" style="max-width:800px;margin:0 auto var(--space-24);padding:var(--space-20)">
+    <h2 style="font-family:var(--font-serif);font-size:24px;margin-bottom:var(--space-12)">Admin &amp; staff access</h2>
+    <p style="color:var(--text-muted);margin-bottom:var(--space-12)">Library staff and administrators use the role-based dashboards below.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--space-10)">
+      <a class="btn sec full" href="admin/dashboard.html">Admin dashboard</a>
+      <a class="btn sec full" href="librarian/dashboard.html">Librarian dashboard</a>
+      <a class="btn sec full" href="superadmin/dashboard.html">Superadmin dashboard</a>
+    </div>
+  </section>
+
+  <footer class="public-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="brand" style="margin-bottom:var(--space-8)">Sraswati<span style="color:#FFC247">Library</span></div>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.6">Frontend demo library management system. Not a production service.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Library</h4>
+        <ul>
+          <li><a href="#catalogue">Catalogue</a></li>
+          <li><a href="#seats">Seat booking</a></li>
+          <li><a href="#membership">Membership</a></li>
+          <li><a href="help.html">Help &amp; contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Account</h4>
+        <ul>
+          <li><a href="login.html">Log in</a></li>
+          <li><a href="register.html">Register</a></li>
+          <li><a href="forgot-password.html">Forgot password</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="terms.html">Terms of service</a></li>
+          <li><a href="privacy.html">Privacy policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>SraswatiLibrary · Frontend demo</span>
+      <span>Opening hours: 9:00 – 21:00 · Help desk: <a href="tel:+912200000000">+91 22 0000 0000</a> · <a href="mailto:help@sraswatilibrary.example">help@sraswatilibrary.example</a></span>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { init } from './js/app.js';
+    init();
+  </script>
+</body>
+</html>

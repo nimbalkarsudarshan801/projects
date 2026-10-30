@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Inventory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Admin · Inventory</div>
+      <nav class="dashboard-nav" id="adminNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="adminLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Inventory</div><div class="page-subtitle">Book copies and stock status</div></div></header>
+      <div id="invView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_books as bk, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('adminNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('adminLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'admin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('inventory.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const books = bk.allBooks();
+      const el = document.getElementById('invView');
+      el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Book</th><th>Author</th><th>Total</th><th>Available</th><th>Issued</th><th>Damaged</th><th>Actions</th></tr></thead><tbody>${books.map(book => {
+        const inv = bk.inventoryForBook(book.id);
+        return `<tr><td><div class="dashboard-user-name" style="font-size:12px">${book.title}</div></td><td style="font-size:12px">${book.author}</td><td style="font-size:12px">${inv.total}</td><td style="font-size:12px"><span class="tag ok">${inv.available}</span></td><td style="font-size:12px">${inv.issued}</td><td style="font-size:12px">${inv.damaged}</td><td>`;
+        if(inv.available>0) return `<button class="btn sec sm" onclick="setCopy('${book.id}','damaged')" style="padding:4px 8px">Mark copy damaged</button>`;
+        return `<span class="tag neu">—</span>`;
+      }).join('')}</tbody></table></div>`;
+    }
+    window.setCopy = (bookId,status) => { const copies = bk.allCopies().filter(c=>c.bookId===bookId && c.status==='available'); if(!copies.length){ notify.error('No available copy.'); return; } const r = bk.setCopyStatus(copies[0].id, status); if(r.ok){ notify.success(`Copy marked ${status}.`); render(); } else { notify.error(r.error); } };
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['admin','superadmin','librarian'])) return;
+    render();
+  </script>
+</body>
+</html>

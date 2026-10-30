@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Superadmin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Superadmin Console</div>
+      <nav class="dashboard-nav" id="saNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="saLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Superadmin Dashboard</div><div class="page-subtitle">System-wide administration</div></div></header>
+      <div id="statsView"></div>
+      <div id="quickView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_members as mem, __sraswati_permissions as perms, __sraswati_notifications as notify, __sraswati_formatters as f } from '../js/app.js';
+    const navEl = document.getElementById('saNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('saLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'superadmin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('dashboard.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const users = mem.allUsers();
+      document.getElementById('statsView').innerHTML = `
+        <div class="dashboard-stats">
+          <div class="dashboard-stat"><div class="stat-label">Total users</div><div class="stat">${users.length}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Superadmins</div><div class="stat">${users.filter(u=>u.role==='superadmin').length}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Admins</div><div class="stat">${users.filter(u=>u.role==='admin').length}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Librarians</div><div class="stat">${users.filter(u=>u.role==='librarian').length}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Students</div><div class="stat">${users.filter(u=>u.role==='student').length}</div></div>
+          <div class="dashboard-stat"><div class="stat-label">Disabled</div><div class="stat bad">${users.filter(u=>u.status==='disabled').length}</div></div>
+        </div>`;
+      document.getElementById('quickView').innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-12);margin-top:var(--space-16)">
+          <a class="btn pri full" href="accounts-roles.html">Accounts &amp; Roles</a>
+          <a class="btn sec full" href="permissions.html">Permissions</a>
+          <a class="btn pri full" href="system-settings.html">System Settings</a>
+          <a class="btn sec full" href="audit-logs.html">Audit Logs</a>
+          <a class="btn pri full" href="active-sessions.html">Active Sessions</a>
+          <a class="btn sec full" href="backup-export.html">Backup / Export</a>
+        </div>`;
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>

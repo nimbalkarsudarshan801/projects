@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Seat Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Admin · Seat Management</div>
+      <nav class="dashboard-nav" id="adminNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="adminLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Seat Management</div><div class="page-subtitle">Zones, seats, and availability</div></div></header>
+      <div id="seatView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_seats as st, __sraswati_bookings as bkg, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('adminNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('adminLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'admin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('seat-management.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const zones = st.allZones();
+      const el = document.getElementById('seatView');
+      let html = '';
+      zones.forEach(z => {
+        const seats = st.seatsByZone(z.id).filter(s=>!s.archived);
+        const avail = seats.filter(s=>s.status==='available').length;
+        const issued = seats.filter(s=>s.status==='issued').length;
+        const dmg = seats.filter(s=>s.status==='damaged').length;
+        html += `<div class="card" style="margin-bottom:var(--space-12)"><div class="dashboard-user-name" style="font-size:16px">${z.name}</div><div style="display:flex;gap:var(--space-10);font-size:12px;color:var(--text-muted);margin-bottom:var(--space-10)"><span>Total ${seats.length}</span><span class="tag ok">Available ${avail}</span><span class="tag warn">Issued ${issued}</span><span class="tag bad">Damaged ${dmg}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:var(--space-8)">${seats.map(s => {
+          const booked = bkg.allBookings().filter(b=>b.seatId===s.seatId && b.status!=='cancelled' && b.status!=='expired');
+          const cls = s.status==='available'?'ok':s.status==='damaged'?'bad':'warn';
+          return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-8);background:var(--card)"><div style="font-size:11px;color:var(--text-label);text-transform:uppercase">${s.seatId}</div><div class="dashboard-user-name" style="font-size:12px">${s.kind}</div><span class="tag ${cls}" style="font-size:10px">${s.status}</span>${booked.length?`<div style="font-size:11px;color:var(--text-muted);margin-top:var(--space-4)">${booked.length} booking(s)</div>`:''}</div>`;
+        }).join('')}</div></div>`;
+      });
+      el.innerHTML = html || '<div class="empty-state"><p>No seats configured.</p></div>';
+    }
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['admin','superadmin','librarian'])) return;
+    render();
+  </script>
+</body>
+</html>

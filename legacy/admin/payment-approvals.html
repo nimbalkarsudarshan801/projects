@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SraswatiLibrary — Payment Approvals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/tables.css">
+  <link rel="stylesheet" href="../css/modals.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body>
+  <div id="demo-badge-container" style="position:fixed;top:10px;right:10px;z-index:200;"></div>
+  <div class="dashboard">
+    <div class="dashboard-demo-banner"><span>DEMO MODE — Frontend-only simulation</span><a href="../index.html">View site</a></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="dashboard-sidebar" id="sidebar">
+      <div class="brand">Sraswati<span style="color:#FFC247">Library</span></div>
+      <div class="sub">Admin · Payment Approvals</div>
+      <nav class="dashboard-nav" id="adminNav"></nav>
+      <div class="dashboard-sidebar-footer"><button class="btn sec full" id="adminLogout" style="margin-top:var(--space-8)">Log out</button></div>
+    </aside>
+    <div class="dashboard-main">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">☰</button>
+      <header class="dashboard-topbar"><div><div class="dashboard-title">Payment Approvals</div><div class="page-subtitle">Review and approve or reject pending payments</div></div></header>
+      <div id="approvalsView"></div>
+    </div>
+  </div>
+  <script type="module">
+    import { __sraswati_app as app, __sraswati_auth as auth, __sraswati_payments as pay, __sraswati_members as mem, __sraswati_notifications as notify, __sraswati_formatters as f, __sraswati_permissions as perms } from '../js/app.js';
+    const navEl = document.getElementById('adminNav');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('adminLogout');
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('sidebar');
+    const role = 'admin';
+    navEl.innerHTML = perms.navItemsForRole(role).map(i => `<a href="${i.href}" class="${i.href.endsWith('payment-approvals.html')?'active':''}">${i.icon||'•'} ${i.label}</a>`).join('');
+    function render(){
+      const u = auth.getCurrentUser(); if(!u)return;
+      userName.textContent = u.name; userAvatar.textContent = u.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+      const list = pay.pendingApprovals().sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+      const el = document.getElementById('approvalsView');
+      if(list.length===0){ el.innerHTML = '<div class="empty-state"><h3>No pending approvals</h3><p>All payments have been reviewed.</p></div>'; return; }
+      el.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Reference</th><th>User</th><th>Type</th><th>Amount</th><th>Method</th><th>Created</th><th>Actions</th></tr></thead><tbody>${list.map(a => {
+        const user = mem.findUser(a.userId);
+        return `<tr><td><div class="dashboard-user-name" style="font-size:12px">${a.paymentId.slice(-8)}</div></td><td style="font-size:12px">${user?user.name:'—'}</td><td style="font-size:12px">${a.type}</td><td style="font-size:12px">${f.currency(a.amount)}</td><td style="font-size:12px">${a.method}</td><td style="font-size:12px">${f.dateShort(a.createdAt)}</td><td>
+          <button class="btn pri sm" onclick="appr('${a.id}')" style="padding:4px 8px">Approve</button>
+          <button class="btn danger sm" onclick="rej('${a.id}')" style="padding:4px 8px;margin-left:4px">Reject</button>
+        </td></tr>`;
+      }).join('')}</tbody></table></div>`;
+    }
+    window.appr = (id) => { const reason = prompt('Approval note (optional):'); const r = pay.approvePayment(id, auth.getCurrentUser().id, reason||'Approved'); if(r.ok){ notify.success('Payment approved.'); render(); } else { notify.error(r.error); } };
+    window.rej = (id) => { const reason = prompt('Rejection reason (required):'); if(reason===null||!reason.trim()){ notify.error('Reason required.'); return; } const r = pay.rejectPayment(id, auth.getCurrentUser().id, reason.trim()); if(r.ok){ notify.success('Payment rejected.'); render(); } else { notify.error(r.error); } };
+    logoutBtn.addEventListener('click',(e)=>{e.preventDefault();auth.logout();notify.success('Logged out.');setTimeout(()=>{window.location.href='../login.html';},600);});
+    mobileBtn.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+    overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+    if(!app.requireRole(['admin','superadmin'])) return;
+    render();
+  </script>
+</body>
+</html>
