@@ -1,0 +1,613 @@
+// Prisma schema — SraswatiLibrary
+// Run `prisma migrate dev` to create migrations against a local PostgreSQL database.
+// Run `prisma generate` to regenerate the Prisma Client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleKey {
+  SUPERADMIN
+  ADMIN
+  LIBRARIAN
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING_VERIFICATION
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING_PAYMENT
+  SUSPENDED
+}
+
+enum BookStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum InventoryStatus {
+  AVAILABLE
+  BORROWED
+  RESERVED
+  LOST
+  DAMAGED
+  MAINTENANCE
+}
+
+enum LoanStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+  LOST
+}
+
+enum ReservationStatus {
+  ACTIVE
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum SeatType {
+  TABLE
+  CARREL
+  READING_HALL
+  STUDY_ROOM
+}
+
+enum SeatStatus {
+  ACTIVE
+  MAINTENANCE
+  DISABLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentPurpose {
+  MEMBERSHIP
+  SEAT_BOOKING
+  FINE
+  BOOK_RENTAL
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+}
+
+enum FineStatus {
+  OUTSTANDING
+  PAID
+  WAIVED
+}
+
+enum ConsentType {
+  MARKETING
+  ANALYTICS
+  FUNCTIONAL_COOKIES
+  THIRD_PARTY_SHARING
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT
+  APPROVAL
+  SECURITY_ALERT
+  SYSTEM_CHANGE
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  passwordHash      String
+  name              String?
+  status            UserStatus @default(PENDING_VERIFICATION)
+  emailVerified     DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  roles             UserRole[]
+  sessions          UserSession[]
+  studentProfile    StudentProfile?
+  librarianProfile  LibrarianProfile?
+  memberships       Membership[]
+  payments          Payment[]
+  seatBookings      SeatBooking[]
+  bookLoans         BookLoan[]
+  bookReservations  BookReservation[]
+  fines             Fine[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  consentRecords    ConsentRecord[]
+  passwordResetTokens PasswordResetToken[]
+
+  // owned/managed relations for audit & approvals
+  paymentApprovals  PaymentApproval[] @relation("ApprovedByAdmin")
+  approvedRefunds   Refund[] @relation("ProcessedByAdmin")
+  waivedFines       Fine[] @relation("WaivedByAdmin")
+
+  @@index([email])
+  @@index([status])
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String
+  key       RoleKey  @unique
+  description String?
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@index([key])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  resource    String
+  action      String
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@index([key])
+  @@index([resource, action])
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  assignedAt DateTime @default(now())
+  assignedBy String?
+  granted   Boolean  @default(true)
+
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id        String   @id @default(uuid())
+  roleId    String
+  permissionId String
+
+  role        Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model StudentProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  studentNumber   String   @unique
+  phone           String?
+  address         String?
+  dateOfBirth     DateTime?
+  membershipStatus MembershipStatus @default(PENDING_PAYMENT)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([studentNumber])
+  @@index([membershipStatus])
+}
+
+model LibrarianProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  employeeId   String   @unique
+  department   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([employeeId])
+}
+
+model MembershipPlan {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  price         Decimal  @db.Decimal(10, 2)
+  currency      String   @default("INR")
+  durationMonths Int
+  maxBooks      Int      @default(5)
+  maxSeats      Int      @default(2)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@index([active])
+}
+
+model Membership {
+  id              String   @id @default(uuid())
+  userId          String
+  planId          String
+  startDate       DateTime
+  endDate         DateTime
+  status          MembershipStatus @default(PENDING_PAYMENT)
+  autoRenew       Boolean  @default(false)
+  paymentId       String? @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     MembershipPlan @relation(fields: [planId], references: [id])
+  payment  Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@unique([userId])
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+}
+
+model Book {
+  id              String   @id @default(uuid())
+  title           String
+  author          String
+  isbn            String?  @unique
+  categoryId      String?
+  description     String?
+  publisher       String?
+  publishedYear   Int?
+  coverImage      String?
+  totalCopies     Int      @default(1)
+  availableCopies Int      @default(0)
+  status          BookStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  category   Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  inventory  BookInventory[]
+  reservations BookReservation[]
+
+  @@index([categoryId])
+  @@index([isbn])
+  @@index([status])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  slug        String   @unique
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  books Book[]
+
+  @@index([slug])
+  @@index([active])
+}
+
+model BookInventory {
+  id          String   @id @default(uuid())
+  bookId      String
+  copyNumber  Int
+  status      InventoryStatus @default(AVAILABLE)
+  location    String?
+  addedAt     DateTime @default(now())
+
+  book   Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  loans    BookLoan[]
+
+  @@unique([bookId, copyNumber])
+  @@index([bookId])
+  @@index([status])
+}
+
+model BookLoan {
+  id           String   @id @default(uuid())
+  inventoryId  String
+  userId       String
+  loanedAt     DateTime @default(now())
+  dueDate      DateTime
+  returnedAt   DateTime?
+  status       LoanStatus @default(ACTIVE)
+  fineId       String? @unique
+
+  inventory BookInventory @relation(fields: [inventoryId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fine      Fine?     @relation("FineLoan", fields: [fineId], references: [id], onDelete: SetNull)
+  fulfilledReservations BookReservation[] @relation("FulfilledByLoan")
+
+  @@index([inventoryId])
+  @@index([userId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model BookReservation {
+  id           String   @id @default(uuid())
+  userId       String
+  bookId       String
+  reservedAt   DateTime @default(now())
+  expiresAt    DateTime
+  status       ReservationStatus @default(ACTIVE)
+  fulfilledByLoanId String?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book     Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  fulfilledByLoan BookLoan? @relation("FulfilledByLoan", fields: [fulfilledByLoanId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model LibrarySeat {
+  id          String   @id @default(uuid())
+  seatNumber  String   @unique
+  zone        String
+  type        SeatType @default(TABLE)
+  status      SeatStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookings SeatBooking[]
+
+  @@index([seatNumber])
+  @@index([zone])
+  @@index([status])
+}
+
+model SeatBooking {
+  id          String   @id @default(uuid())
+  userId      String
+  seatId      String
+  startTime   DateTime
+  endTime     DateTime
+  status      BookingStatus @default(PENDING)
+  paymentId   String? @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seat     LibrarySeat @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  payment  Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([seatId])
+  @@index([status])
+  @@index([startTime, endTime])
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  userId         String
+  razorpayOrderId String?  @unique
+  razorpayPaymentId String? @unique
+  razorpaySignature String?
+  amount         Decimal  @db.Decimal(10, 2)
+  currency       String   @default("INR")
+  status         PaymentStatus @default(PENDING)
+  purpose        PaymentPurpose
+  referenceId    String?  // links to membership, seat booking, fine, etc.
+  referenceType  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership   Membership?
+  seatBooking  SeatBooking?
+  approvals    PaymentApproval[]
+  refunds      Refund[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+}
+
+model PaymentApproval {
+  id          String   @id @default(uuid())
+  paymentId   String
+  adminId     String
+  status      ApprovalStatus @default(PENDING)
+  reason      String?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  admin   User    @relation("ApprovedByAdmin", fields: [adminId], references: [id])
+
+  @@unique([paymentId])
+  @@index([paymentId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model Refund {
+  id          String   @id @default(uuid())
+  paymentId   String
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String?
+  status      RefundStatus @default(PENDING)
+  processedAt DateTime?
+  processedBy String?
+
+  payment  Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  processor User?   @relation("ProcessedByAdmin", fields: [processedBy], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([status])
+}
+
+model Fine {
+  id          String   @id @default(uuid())
+  userId      String
+  loanId      String?
+  amount      Decimal  @db.Decimal(10, 2)
+  status      FineStatus @default(OUTSTANDING)
+  paidAt      DateTime?
+  waivedAt    DateTime?
+  waivedBy    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loan     BookLoan? @relation("FineLoan")
+  waiver   User?   @relation("WaivedByAdmin", fields: [waivedBy], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([loanId])
+  @@index([status])
+}
+
+model UserSession {
+  id         String   @id @default(uuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     AuditAction
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String
+  title       String
+  message     String
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+model ApplicationSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string")
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+model ConsentRecord {
+  id          String   @id @default(uuid())
+  userId      String
+  type        ConsentType
+  granted     Boolean  @default(true)
+  version     String   @default("1.0")
+  createdAt   DateTime @default(now())
+  withdrawnAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@index([type])
+}
+
+model PasswordResetToken {
+  id          String   @id @default(uuid())
+  userId      String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
